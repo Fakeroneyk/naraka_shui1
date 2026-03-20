@@ -1,0 +1,109 @@
+# 净水流深·噩梦难度 导航路径点配置
+# 说明：所有坐标为小地图像素坐标（相对于小地图截取区域左上角）
+# 小地图截取区域：left=1750, top=20, right=1910, bottom=180（160x160 px）
+
+map:
+  name: "净水流深·噩梦"
+  minimap_size: [160, 160]   # 小地图截取尺寸（像素）
+
+# 出生点
+spawn:
+  minimap_pos: [80, 140]
+  description: "出生点（地图南侧入口）"
+
+# 5个候选怪物点位（每局随机激活3个）
+# priority: 探索优先级（1=最先探索）
+# route_waypoints: 从上一个点到此点的中间路径节点列表
+monster_spots:
+  - id: "spot_A"
+    name: "A点（洞穴入口左侧平台）"
+    minimap_pos: [45, 110]
+    priority: 1
+    route_waypoints:
+      - [78, 132]
+      - [60, 120]
+      - [45, 110]
+    approach_key: "walk"           # walk / jump / hook
+    note: "需要跳跃上台阶"
+
+  - id: "spot_B"
+    name: "B点（水域中央浮台）"
+    minimap_pos: [80, 85]
+    priority: 2
+    route_waypoints:
+      - [80, 125]
+      - [80, 100]
+      - [80, 85]
+    approach_key: "walk"
+    note: "开阔水域，直线可达"
+
+  - id: "spot_C"
+    name: "C点（溶洞中层左通道）"
+    minimap_pos: [35, 65]
+    priority: 3
+    route_waypoints:
+      - [60, 90]
+      - [45, 75]
+      - [35, 65]
+    approach_key: "hook"           # 使用钩索快速位移
+    note: "使用钩索Q跨越水域"
+
+  - id: "spot_D"
+    name: "D点（溶洞中层右通道）"
+    minimap_pos: [120, 60]
+    priority: 4
+    route_waypoints:
+      - [100, 80]
+      - [115, 65]
+      - [120, 60]
+    approach_key: "walk"
+    note: "精英怪点位，注意多波次"
+
+  - id: "spot_E"
+    name: "E点（神庙核心区）"
+    minimap_pos: [80, 35]
+    priority: 5
+    route_waypoints:
+      - [80, 70]
+      - [80, 50]
+      - [80, 35]
+    approach_key: "hook"
+    note: "最深处，Boss前置点位"
+
+# Boss门位置
+boss_door:
+  id: "boss_door"
+  name: "Boss门（需要3把钥匙）"
+  minimap_pos: [80, 20]
+  route_waypoints:
+    - [80, 40]
+    - [80, 28]
+    - [80, 20]
+  approach_key: "walk"
+  interact_key: "e"              # 按E开门
+  note: "集齐3把钥匙后才能交互"
+
+# Boss房内部（进门后的战斗区域中心）
+boss_arena:
+  id: "boss_arena"
+  name: "Boss战斗区域"
+  minimap_pos: [80, 12]
+  note: "进入后触发Boss战，保持场地中央战斗"
+
+# 导航参数
+navigation:
+  arrival_threshold: 8           # 距离路径点多少像素视为"已到达"
+  stuck_check_interval: 2.0      # 卡住检测间隔（秒）
+  stuck_threshold: 5             # 连续N次检测坐标未变化则判定卡住
+  stuck_min_move: 3              # 最小有效移动距离（像素）
+
+  # 脱困策略：依次尝试
+  unstuck_actions:
+    - action: "jump"             # 跳跃
+      duration: 0.3
+    - action: "dodge_random"     # 随机方向闪避
+      duration: 0.2
+    - action: "hook_forward"     # 钩索向前
+      duration: 0.5
+    - action: "move_backward"    # 后退
+      duration: 0.8

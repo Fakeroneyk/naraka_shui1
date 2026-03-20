@@ -1,0 +1,25 @@
+# 核心依赖
+bettercam>=1.0.0          # DXGI高速截图
+opencv-python>=4.8.0       # 图像处理与模板匹配
+numpy>=1.24.0              # 数值计算
+ultralytics>=8.0.0         # YOLOv8目标检测
+
+# 输入模拟
+pydirectinput>=1.0.4       # DirectInput键盘鼠标模拟
+
+# Windows API
+pywin32>=306               # 窗口管理
+
+# 配置与日志
+pyyaml>=6.0                # YAML配置文件
+loguru>=0.7.0              # 结构化日志
+
+# 路径规划
+python-pathfinding>=1.0.1  # A*寻路算法
+
+# 工具库
+Pillow>=10.0.0             # 图像处理辅助
+
+# 可选：AI推理加速（需要CUDA环境）
+# torch>=2.0.0             # PyTorch
+# tensorrt>=8.6.0          # TensorRT推理加速

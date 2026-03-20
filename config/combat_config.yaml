@@ -1,0 +1,149 @@
+# 战斗配置 - 宁红夜·百化冰爆流（长剑+五眼铳）
+# 所有时间单位：毫秒(ms)
+
+# 角色配置
+character:
+  name: "宁红夜"
+  style: "百化冰爆流"
+  primary_weapon: "长剑"
+  secondary_weapon: "五眼铳"
+
+# 连招序列定义
+combos:
+  # 长剑冰爆连招（主要输出循环）
+  sword_ice_burst:
+    name: "长剑冰爆循环"
+    description: "化气→蓄力剑气→闪避取消→蓄力剑气→循环"
+    loop: true
+    steps:
+      - action: "key_press"
+        key: "f"
+        delay_after: 200
+        description: "化气开启"
+      - action: "mouse_hold"
+        button: "left"
+        hold_duration: 800
+        delay_after: 50
+        description: "蓄力剑气"
+      - action: "dodge_cancel"
+        direction: "forward"
+        delay_after: 100
+        description: "闪避取消后摇"
+      - action: "mouse_hold"
+        button: "left"
+        hold_duration: 800
+        delay_after: 50
+        description: "蓄力剑气"
+      - action: "dodge_cancel"
+        direction: "forward"
+        delay_after: 100
+        description: "闪避取消后摇"
+      - action: "mouse_hold"
+        button: "left"
+        hold_duration: 800
+        delay_after: 50
+        description: "蓄力剑气"
+
+  # 五眼铳爆发连招（远程/Boss倒地时）
+  musket_burst:
+    name: "五眼铳爆发"
+    description: "切铳→化气→蓄力轰击×2→切回长剑"
+    loop: false
+    steps:
+      - action: "key_press"
+        key: "2"
+        delay_after: 300
+        description: "切换五眼铳"
+      - action: "key_press"
+        key: "f"
+        delay_after: 200
+        description: "化气开启"
+      - action: "mouse_hold"
+        button: "left"
+        hold_duration: 1000
+        delay_after: 100
+        description: "蓄力炮击"
+      - action: "mouse_hold"
+        button: "left"
+        hold_duration: 1000
+        delay_after: 100
+        description: "蓄力炮击"
+      - action: "key_press"
+        key: "1"
+        delay_after: 200
+        description: "切回长剑"
+
+  # 普攻填充（无技能CD时）
+  normal_attack_fill:
+    name: "普攻填充循环"
+    description: "平A三连→闪避取消→循环"
+    loop: true
+    steps:
+      - action: "mouse_click"
+        button: "left"
+        delay_after: 150
+        description: "平A第一击"
+      - action: "mouse_click"
+        button: "left"
+        delay_after: 150
+        description: "平A第二击"
+      - action: "mouse_click"
+        button: "left"
+        delay_after: 150
+        description: "平A第三击"
+      - action: "dodge_cancel"
+        direction: "forward"
+        delay_after: 100
+        description: "闪避取消后摇"
+
+  # 奥义释放（群体控制）
+  ultimate_release:
+    name: "奥义释放"
+    description: "V键释放大招"
+    loop: false
+    steps:
+      - action: "key_press"
+        key: "v"
+        delay_after: 1500
+        description: "奥义释放+动画等待"
+
+# 战斗策略参数
+strategy:
+  # 索敌与瞄准
+  targeting:
+    screen_center: [960, 540]         # 屏幕中心坐标
+    aim_speed: 12                     # 鼠标移动速度（每帧像素）
+    aim_deadzone: 30                  # 偏移小于此值不修正（像素）
+    enemy_priority: ["enemy_boss", "enemy_elite", "enemy_normal"]  # 优先攻击目标
+    auto_aim_interval: 200            # 自动瞄准刷新间隔（ms）
+
+  # 连招选择条件
+  combo_selection:
+    # 奥义条件：多个敌人且奥义就绪
+    ultimate_min_enemies: 2
+    # 五眼铳条件：与目标距离远或Boss倒地
+    musket_min_distance: 400          # 距离超过此值时切五眼铳（像素）
+    # 化气CD
+    skill_f_cooldown: 8000            # 化气CD（ms）
+
+  # 清怪效率参数
+  efficiency:
+    max_combat_time: 60000            # 单个点位最大战斗时间（ms），超时后跳过
+    post_combat_wait: 1500            # 清怪后等待时间（等待掉落物生成）
+    loot_scan_radius: 300             # 拾取扫描半径（像素）
+    chest_open_wait: 2000             # 开箱后等待（等待物品掉落）
+
+# 闪避取消动作定义
+dodge_cancel:
+  forward:
+    keys: ["shift", "w"]
+    hold_duration: 80
+  backward:
+    keys: ["shift", "s"]
+    hold_duration: 80
+  left:
+    keys: ["shift", "a"]
+    hold_duration: 80
+  right:
+    keys: ["shift", "d"]
+    hold_duration: 80

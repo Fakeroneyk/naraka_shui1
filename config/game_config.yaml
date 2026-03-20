@@ -1,0 +1,100 @@
+# 游戏基础配置
+game:
+  name: "永劫无间"
+  window_title: "永劫无间"       # 游戏窗口标题（用于句柄查找）
+  resolution:
+    width: 1920
+    height: 1080
+  target_fps: 30                 # 脚本目标运行帧率
+
+# 按键映射（可根据游戏内设置调整）
+keys:
+  move_forward: "w"
+  move_backward: "s"
+  move_left: "a"
+  move_right: "d"
+  jump: "space"
+  dodge: "shift"                 # 闪避（配合方向键）
+  skill: "f"                     # 宁红夜技能-化气
+  ultimate: "v"                  # 奥义
+  interact: "e"                  # 交互/拾取/开箱/开门
+  hook: "q"                      # 钩索
+  weapon_1: "1"                  # 长剑
+  weapon_2: "2"                  # 五眼铳
+  sprint_hold: "shift"           # 按住加速跑
+
+# 鼠标配置
+mouse:
+  sensitivity: 0.8               # 视角旋转灵敏度系数（需根据游戏内鼠标灵敏度调整）
+  attack_button: "left"          # 普通攻击/蓄力攻击
+  aim_button: "right"            # 瞄准
+
+# 屏幕区域配置（用于截图优化，仅截取必要区域）
+screen_regions:
+  # 小地图区域（右上角）
+  minimap:
+    left: 1750
+    top: 20
+    right: 1910
+    bottom: 180
+  # 技能栏区域（屏幕中下部）
+  skill_bar:
+    left: 800
+    top: 900
+    right: 1120
+    bottom: 1060
+  # 血条区域（左上角）
+  health_bar:
+    left: 60
+    top: 40
+    right: 360
+    bottom: 80
+  # 钥匙/道具栏（右下角）
+  item_bar:
+    left: 1600
+    top: 950
+    right: 1920
+    bottom: 1080
+  # 交互提示区域（屏幕中央偏下）
+  interact_prompt:
+    left: 830
+    top: 680
+    right: 1090
+    bottom: 760
+  # 战斗主视野区域（全屏去除UI）
+  combat_view:
+    left: 0
+    top: 0
+    right: 1920
+    bottom: 1080
+
+# YOLO模型配置
+yolo:
+  model_path: "models/yolov8n_naraka.pt"
+  confidence_threshold: 0.6      # 目标检测置信度阈值
+  inference_size: 640            # 推理输入分辨率
+  device: "cuda"                 # 推理设备: cuda / cpu
+  # 检测类别ID映射
+  class_ids:
+    enemy_normal: 0
+    enemy_elite: 1
+    enemy_boss: 2
+    health_bar_enemy: 3
+    chest_locked: 4
+    chest_unlocked: 5
+    key_item: 6
+    door_boss: 7
+    loot_drop: 8
+
+# 模板匹配配置
+template_matching:
+  threshold: 0.85                # 匹配置信度阈值
+  templates_dir: "models/templates"
+  # UI模板文件名
+  templates:
+    skill_ready: "skill_f_ready.png"
+    skill_cooldown: "skill_f_cd.png"
+    ultimate_ready: "ultimate_v_ready.png"
+    key_icon: "key_icon.png"
+    interact_e_prompt: "interact_e.png"
+    chest_open_prompt: "chest_open.png"
