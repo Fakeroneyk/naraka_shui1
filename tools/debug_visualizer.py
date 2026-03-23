@@ -154,8 +154,11 @@ def main():
             enemy_count = len(detections.all_enemies)
             frame_bgr = draw_detections(frame_bgr, detections)
 
-        # 小地图
-        minimap_frame = capture.grab_region("minimap", regions)
+        # 小地图（需要加上窗口偏移）
+        window_offset = None
+        if wm.client_rect:
+            window_offset = (wm.client_rect[0], wm.client_rect[1])
+        minimap_frame = capture.grab_region("minimap", regions, window_offset)
         player_pos = None
         player_angle = 0.0
         if minimap_frame is not None:
@@ -167,6 +170,9 @@ def main():
             mh, mw = minimap_vis.shape[:2]
             frame_bgr[10:10+mh*2, frame_bgr.shape[1]-mw*2-10:frame_bgr.shape[1]-10] = \
                 cv2.resize(minimap_vis, (mw*2, mh*2))
+            # 终端输出小地图坐标
+            if player_pos:
+                print(f"[小地图] 玩家位置: {player_pos}, 角度: {player_angle:.1f}°", end='\r')
 
         # HUD信息
         fps_counter.tick()

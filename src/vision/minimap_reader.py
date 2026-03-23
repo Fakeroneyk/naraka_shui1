@@ -22,9 +22,11 @@ class MinimapReader:
         self._last_angle: float = 0.0
 
         # 玩家标记颜色范围（HSV空间，需根据实际游戏截图校准）
-        # 玩家标记通常是白色/亮蓝色箭头
-        self._player_hsv_lower = np.array([0, 0, 200])
-        self._player_hsv_upper = np.array([180, 60, 255])
+        # 玩家标记是橙色/红色三角形箭头
+        self._player_hsv_lower = np.array([0, 60, 50])
+        self._player_hsv_upper = np.array([40, 200, 150])
+        # 最小轮廓面积阈值
+        self._min_player_area = 5
 
         # 敌人标记颜色范围（红色）
         self._enemy_hsv_lower1 = np.array([0, 100, 100])
@@ -61,14 +63,32 @@ class MinimapReader:
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if contours:
-                # 取最大轮廓的中心
-                largest = max(contours, key=cv2.contourArea)
-                M = cv2.moments(largest)
-                if M["m00"] > 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    self._last_pos = (cx, cy)
-                    return (cx, cy)
+                # 过滤：排除过大(背景)和过小(噪点)的轮廓
+                valid = [c for c in contours 
+                        if self._min_player_area <= cv2.contourArea(c) <= 1000]
+                if not valid:
+                    valid = [c for c in contours if cv2.contourArea(c) >= self._min_player_area]
+                
+                if valid:
+                    # 方法1：找位置最下方的轮廓（玩家通常在小地图边缘）
+                    # 或者找左下角区域的轮廓
+                    h, w = minimap_frame.shape[:2]
+                    candidates = []
+                    for c in valid:
+                        M = cv2.moments(c)
+                        if M["m00"] > 0:
+                            cx = int(M["m10"] / M["m00"])
+                            cy = int(M["m01"] / M["m00"])
+                            # 玩家标记可能在底部或左下角
+                            # 计算一个评分：y坐标越大越好（越靠下）
+                            score = cy * 2 - cx  # 下 > 左
+                            candidates.append((score, cx, cy, c))
+                    
+                    if candidates:
+                        # 选择评分最高的
+                        best = max(candidates, key=lambda x: x[0])
+                        self._last_pos = (best[1], best[2])
+                        return (best[1], best[2])
 
         except Exception as e:
             logger.trace("小地图玩家定位失败: {}", e)

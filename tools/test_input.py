@@ -39,31 +39,31 @@ def main():
 
     print("[测试3] 交互测试：按E")
     ctrl.key_press("e", delay_ms=200)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试4] 鼠标移动测试：视角右转")
     ctrl.mouse_move_relative(200, 0, smooth=True)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试5] 鼠标移动测试：视角左转")
     ctrl.mouse_move_relative(-200, 0, smooth=True)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试6] 鼠标点击：左键攻击")
     ctrl.mouse_click("left", delay_ms=200)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试7] 鼠标长按：蓄力攻击 800ms")
     ctrl.mouse_hold("left", 800)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试8] 组合键：Shift+W 疾跑 1秒")
     ctrl.keys_hold(["shift", "w"], 1000)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试9] 技能键：按F (化气)")
     ctrl.key_press("f", delay_ms=200)
-    time.sleep(0.5)
+    time.sleep(2)
 
     print("[测试10] 钩索键：按Q")
     ctrl.key_press("q", delay_ms=200)

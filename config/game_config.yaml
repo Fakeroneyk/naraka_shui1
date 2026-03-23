@@ -1,7 +1,7 @@
 # 游戏基础配置
 game:
   name: "永劫无间"
-  window_title: "永劫无间"       # 游戏窗口标题（用于句柄查找）
+  window_title: "Naraka"       # 游戏窗口标题（用于句柄查找）
   resolution:
     width: 1920
     height: 1080
@@ -33,10 +33,10 @@ mouse:
 screen_regions:
   # 小地图区域（右上角）
   minimap:
-    left: 1750
-    top: 20
-    right: 1910
-    bottom: 180
+    left: 1663
+    top: 40
+    right: 1890
+    bottom: 268
   # 技能栏区域（屏幕中下部）
   skill_bar:
     left: 800

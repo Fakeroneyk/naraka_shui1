@@ -4,6 +4,7 @@
 """
 import time
 import ctypes
+import random
 from typing import Optional
 from loguru import logger
 
@@ -17,6 +18,14 @@ except ImportError:
     pydirectinput = None
     _INPUT_BACKEND = "none"
     logger.warning("pydirectinput 未安装！键盘鼠标模拟不可用")
+
+try:
+    import win32api
+    _WIN32_AVAILABLE = True
+except ImportError:
+    win32api = None
+    _WIN32_AVAILABLE = False
+    logger.warning("win32api 未安装！将使用 pydirectinput 作为备选")
 
 
 # Win32 SendInput 常量（备用低级方案）
@@ -128,9 +137,13 @@ class InputController:
             return
         try:
             if button == "left":
-                pydirectinput.click(button="left")
+                self.mouse_down(button="left")
+                random_delay(random.uniform(0.05, 0.1), variance_pct=0.08)
+                self.mouse_up(button="left")
             else:
-                pydirectinput.click(button="right")
+                self.mouse_down(button="right")
+                random_delay(random.uniform(0.05, 0.1), variance_pct=0.08)
+                self.mouse_up(button="right")
             if delay_ms > 0:
                 random_delay(delay_ms)
         except Exception as e:
@@ -181,24 +194,36 @@ class InputController:
             dy: Y方向偏移量（正=下）
             smooth: 是否平滑移动（多步）
         """
-        if pydirectinput is None:
-            return
-
-        if smooth and (abs(dx) > 20 or abs(dy) > 20):
-            # 拆分为多步平滑移动
-            steps = relative_move_steps(dx, dy, steps=8)
-            for step_dx, step_dy in steps:
-                if step_dx != 0 or step_dy != 0:
-                    try:
-                        pydirectinput.moveRel(step_dx, step_dy)
-                    except Exception:
-                        pass
-                    time.sleep(0.002)  # 2ms 步进间隔
-        else:
-            try:
-                pydirectinput.moveRel(dx, dy)
-            except Exception as e:
-                logger.error("mouse_move_relative 失败: {}", e)
+        if _WIN32_AVAILABLE and win32api is not None:
+            if smooth and (abs(dx) > 20 or abs(dy) > 20):
+                steps = relative_move_steps(dx, dy, steps=8)
+                for step_dx, step_dy in steps:
+                    if step_dx != 0 or step_dy != 0:
+                        try:
+                            win32api.mouse_event(MOUSEEVENTF_MOVE, step_dx, step_dy, 0, 0)
+                        except Exception:
+                            pass
+                        time.sleep(0.002)
+            else:
+                try:
+                    win32api.mouse_event(MOUSEEVENTF_MOVE, dx, dy, 0, 0)
+                except Exception as e:
+                    logger.error("mouse_move_relative 失败: {}", e)
+        elif pydirectinput is not None:
+            if smooth and (abs(dx) > 20 or abs(dy) > 20):
+                steps = relative_move_steps(dx, dy, steps=8)
+                for step_dx, step_dy in steps:
+                    if step_dx != 0 or step_dy != 0:
+                        try:
+                            pydirectinput.moveRel(step_dx, step_dy)
+                        except Exception:
+                            pass
+                        time.sleep(0.002)
+            else:
+                try:
+                    pydirectinput.moveRel(dx, dy)
+                except Exception as e:
+                    logger.error("mouse_move_relative 失败: {}", e)
 
     def aim_at_screen_offset(self, offset_x: int, offset_y: int) -> None:
         """

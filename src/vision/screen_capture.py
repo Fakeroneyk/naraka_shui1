@@ -104,13 +104,14 @@ class ScreenCapture:
             logger.trace("mss grab 失败: {}", e)
             return None
 
-    def grab_region(self, region_name: str, regions_config: dict) -> Optional[np.ndarray]:
+    def grab_region(self, region_name: str, regions_config: dict, window_offset: Optional[Tuple[int, int]] = None) -> Optional[np.ndarray]:
         """
         根据配置名称截取特定UI区域
 
         Args:
             region_name: 区域名称（如 "minimap", "skill_bar"）
             regions_config: screen_regions 配置字典
+            window_offset: 窗口偏移量 (left, top)，配置文件中的坐标是相对于窗口的
 
         Returns:
             截取的图像，或None
@@ -120,7 +121,12 @@ class ScreenCapture:
             return None
 
         cfg = regions_config[region_name]
-        region = (cfg["left"], cfg["top"], cfg["right"], cfg["bottom"])
+        # 坐标转换：配置中是相对于窗口的偏移，需要加上窗口在屏幕上的绝对位置
+        if window_offset:
+            ox, oy = window_offset
+            region = (cfg["left"] + ox, cfg["top"] + oy, cfg["right"] + ox, cfg["bottom"] + oy)
+        else:
+            region = (cfg["left"], cfg["top"], cfg["right"], cfg["bottom"])
         return self.grab(region=region)
 
     def release(self) -> None:

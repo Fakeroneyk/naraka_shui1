@@ -15,11 +15,11 @@ pyyaml>=6.0                # YAML配置文件
 loguru>=0.7.0              # 结构化日志
 
 # 路径规划
-python-pathfinding>=1.0.1  # A*寻路算法
+pathfinding>=1.0.1  # A*寻路算法
 
 # 工具库
 Pillow>=10.0.0             # 图像处理辅助
 
 # 可选：AI推理加速（需要CUDA环境）
-# torch>=2.0.0             # PyTorch
-# tensorrt>=8.6.0          # TensorRT推理加速
+torch>=2.0.0             # PyTorch
+tensorrt>=8.6.0          # TensorRT推理加速
