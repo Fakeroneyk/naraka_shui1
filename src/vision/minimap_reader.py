@@ -3,6 +3,7 @@
 负责从小地图截图中提取玩家位置和朝向
 """
 import math
+import os
 from typing import Optional, Tuple
 import cv2
 import numpy as np
@@ -12,21 +13,39 @@ from loguru import logger
 class MinimapReader:
     """小地图解析器"""
 
-    def __init__(self, minimap_size: Tuple[int, int] = (160, 160)):
+    def __init__(self, minimap_size: Tuple[int, int] = (160, 160), template_path: str = "player.png"):
         """
         Args:
             minimap_size: 小地图截取尺寸 (width, height)
+            template_path: 玩家标记模板图片路径
         """
         self._size = minimap_size
         self._last_pos: Optional[Tuple[int, int]] = None
         self._last_angle: float = 0.0
 
-        # 玩家标记颜色范围（HSV空间，需根据实际游戏截图校准）
-        # 玩家标记是黄色箭头
-        self._player_hsv_lower = np.array([75, 100, 100])
-        self._player_hsv_upper = np.array([95, 255, 255])
-        # 最小轮廓面积阈值
-        self._min_player_area = 3
+        # 加载玩家标记模板
+        self._player_template = None
+        # 优先从template文件夹查找
+        template_dir = "template"
+        full_path = os.path.join(template_dir, template_path) if not os.path.dirname(template_path) else template_path
+        
+        if os.path.exists(full_path):
+            self._player_template = cv2.imread(full_path, cv2.IMREAD_COLOR)
+            if self._player_template is not None:
+                logger.info("玩家标记模板已加载: {}", full_path)
+            else:
+                logger.warning("玩家标记模板加载失败: {}", full_path)
+        elif os.path.exists(template_path):
+            self._player_template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+            if self._player_template is not None:
+                logger.info("玩家标记模板已加载: {}", template_path)
+            else:
+                logger.warning("玩家标记模板加载失败: {}", template_path)
+        else:
+            logger.warning("玩家标记模板不存在: {}", full_path)
+
+        # 模板匹配阈值
+        self._template_match_threshold = 0.7
 
         # 敌人标记颜色范围（红色）
         self._enemy_hsv_lower1 = np.array([0, 100, 100])
@@ -47,37 +66,25 @@ class MinimapReader:
         if minimap_frame is None:
             return self._last_pos
 
+        if self._player_template is None:
+            logger.warning("玩家标记模板未加载")
+            return self._last_pos
+
         try:
-            # 转为HSV
-            hsv = cv2.cvtColor(minimap_frame, cv2.COLOR_BGR2HSV)
+            # 模板匹配
+            result = cv2.matchTemplate(minimap_frame, self._player_template, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-            # 提取玩家标记（亮色掩模）
-            mask = cv2.inRange(hsv, self._player_hsv_lower, self._player_hsv_upper)
-
-            # 形态学操作去噪
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-            # 查找轮廓
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            if contours:
-                # 过滤：排除过大(背景)和过小(噪点)的轮廓
-                valid = [c for c in contours 
-                        if self._min_player_area <= cv2.contourArea(c) <= 30000]
-                if not valid:
-                    valid = [c for c in contours if cv2.contourArea(c) >= self._min_player_area]
-                
-                if valid:
-                    # 选择最大的轮廓（玩家标记应该相对较大）
-                    largest = max(valid, key=cv2.contourArea)
-                    M = cv2.moments(largest)
-                    if M["m00"] > 0:
-                        cx = int(M["m10"] / M["m00"])
-                        cy = int(M["m01"] / M["m00"])
-                        self._last_pos = (cx, cy)
-                        return (cx, cy)
+            if max_val >= self._template_match_threshold:
+                # 计算模板中心点
+                template_h, template_w = self._player_template.shape[:2]
+                cx = max_loc[0] + template_w // 2
+                cy = max_loc[1] + template_h // 2
+                self._last_pos = (cx, cy)
+                logger.trace("模板匹配成功: 位置({}, {}), 置信度: {:.2f}", cx, cy, max_val)
+                return (cx, cy)
+            else:
+                logger.trace("模板匹配置信度不足: {:.2f}", max_val)
 
         except Exception as e:
             logger.trace("小地图玩家定位失败: {}", e)
@@ -87,6 +94,7 @@ class MinimapReader:
     def read_player_angle(self, minimap_frame: np.ndarray) -> float:
         """
         从小地图截图中估算玩家朝向角度
+        注意：使用模板匹配时无法直接获取角度，暂时返回上一次检测的角度
 
         Args:
             minimap_frame: 小地图区域的RGB图像
@@ -97,27 +105,8 @@ class MinimapReader:
         if minimap_frame is None:
             return self._last_angle
 
-        try:
-            hsv = cv2.cvtColor(minimap_frame, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv, self._player_hsv_lower, self._player_hsv_upper)
-
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            if contours:
-                largest = max(contours, key=cv2.contourArea)
-                if len(largest) >= 5:
-                    # 拟合椭圆获取角度
-                    ellipse = cv2.fitEllipse(largest)
-                    angle = ellipse[2]  # 椭圆旋转角
-                    self._last_angle = angle
-                    return angle
-
-        except Exception as e:
-            logger.trace("小地图朝向检测失败: {}", e)
-
+        # 模板匹配方式无法直接获取角度，返回上次角度
+        # 如果需要角度检测，可以保留HSV方式或使用其他方法
         return self._last_angle
 
     def detect_enemies_on_minimap(self, minimap_frame: np.ndarray) -> list[Tuple[int, int]]:
