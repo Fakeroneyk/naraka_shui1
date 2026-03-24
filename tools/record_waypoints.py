@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 路径点录制工具
 用途：在游戏中手动走一遍路线，实时录制小地图坐标，生成路径点数据
@@ -20,6 +21,11 @@ import sys
 import time
 import json
 from datetime import datetime
+
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -89,7 +95,7 @@ class WaypointRecorder:
         print("=" * 50)
         print("操作指南:")
         print("  R  - 开始/暂停自动录制")
-        print("  M  - 手动标记关键点（怪物点/宝箱/Boss门等）")
+        print("  I  - 手动标记关键点（怪物点/宝箱/Boss门等）")
         print("  P  - 打印已录制坐标")
         print("  S  - 保存到YAML文件")
         print("  Q  - 退出")
@@ -97,6 +103,13 @@ class WaypointRecorder:
 
         regions = self._game_cfg["screen_regions"]
         show_preview = True
+        preview_frame_skip = 3
+
+        print("\n提示：先按M打开地图，按I标记点")
+        print("标记类型：1=怪物点 2=宝箱 3=Boss门 5=出生点")
+
+        preview_counter = 0
+        last_vis = None
 
         while True:
             # ─── 键盘监听 ─────────────────────────────────────
@@ -108,9 +121,9 @@ class WaypointRecorder:
                 self._is_recording = not self._is_recording
                 state = "▶ 开始" if self._is_recording else "⏸ 暂停"
                 print(f"\n{state}自动录制")
-                time.sleep(0.3)  # 防连按
+                time.sleep(0.3)
 
-            if keyboard.is_pressed('m'):
+            if keyboard.is_pressed('i'):
                 self._manual_mark()
                 time.sleep(0.3)
 
@@ -123,7 +136,8 @@ class WaypointRecorder:
                 time.sleep(0.3)
 
             # ─── 截图+定位 ─────────────────────────────────────
-            minimap_frame = self._capture.grab_region("minimap", regions)
+            offset = (self._wm.client_rect[0], self._wm.client_rect[1])
+            minimap_frame = self._capture.grab_region("full_map", regions, offset)
             if minimap_frame is None:
                 time.sleep(0.05)
                 continue
@@ -144,18 +158,24 @@ class WaypointRecorder:
                     count = len(self._auto_points)
                     print(f"\r  📍 自动录制 #{count}: pos={pos}, angle={angle:.1f}°   ", end="", flush=True)
 
-            # ─── 小地图预览 ────────────────────────────────────
+            # ─── 预览窗口（每3帧更新一次，避免卡顿）──────────────
             if show_preview:
-                minimap_bgr = cv2.cvtColor(minimap_frame, cv2.COLOR_RGB2BGR)
-                vis = self._draw_preview(minimap_bgr, pos, angle)
-                # 放大3倍显示
-                vis_large = cv2.resize(vis, (vis.shape[1] * 3, vis.shape[0] * 3),
-                                       interpolation=cv2.INTER_NEAREST)
-                cv2.imshow("Minimap - Waypoint Recorder", vis_large)
-
-                key = cv2.waitKey(30) & 0xFF
-                if key == ord('q'):
-                    break
+                preview_counter += 1
+                if preview_counter >= preview_frame_skip:
+                    preview_counter = 0
+                    # 先缩小再转颜色，减少处理量
+                    h, w = minimap_frame.shape[:2]
+                    scale = 400 / w
+                    new_w, new_h = 400, int(h * scale)
+                    small = cv2.resize(minimap_frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                    bgr = cv2.cvtColor(small, cv2.COLOR_RGB2BGR)
+                    if pos:
+                        pos_s = (int(pos[0] * scale), int(pos[1] * scale))
+                    else:
+                        pos_s = None
+                    vis = self._draw_preview(bgr, pos_s, angle)
+                    cv2.imshow("Minimap Recorder", vis)
+                    cv2.waitKey(1)
 
             time.sleep(0.03)
 

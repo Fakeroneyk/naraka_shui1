@@ -154,11 +154,15 @@ def main():
             enemy_count = len(detections.all_enemies)
             frame_bgr = draw_detections(frame_bgr, detections)
 
-        # 小地图（需要加上窗口偏移）
+        # 小地图（需要加上窗口偏移）- 使用minimap区域测试
         window_offset = None
         if wm.client_rect:
             window_offset = (wm.client_rect[0], wm.client_rect[1])
-        minimap_frame = capture.grab_region("minimap", regions, window_offset)
+        # 使用minimap区域来测试
+        minimap_frame = capture.grab_region("full_map", regions, window_offset)
+        
+        # 调整显示大小
+        display_scale = 0.5  # 大地图缩放显示
         player_pos = None
         player_angle = 0.0
         if minimap_frame is not None:
@@ -166,10 +170,13 @@ def main():
             player_angle = minimap_reader.read_player_angle(minimap_frame)
             minimap_bgr = cv2.cvtColor(minimap_frame, cv2.COLOR_RGB2BGR)
             minimap_vis = draw_minimap_info(minimap_bgr, player_pos, player_angle)
-            # 叠加小地图到右上角
+            # 叠加小地图到右上角，根据地图大小调整
             mh, mw = minimap_vis.shape[:2]
-            frame_bgr[10:10+mh*2, frame_bgr.shape[1]-mw*2-10:frame_bgr.shape[1]-10] = \
-                cv2.resize(minimap_vis, (mw*2, mh*2))
+            display_w = int(mw * display_scale)
+            display_h = int(mh * display_scale)
+            resized = cv2.resize(minimap_vis, (display_w, display_h))
+            dh, dw = resized.shape[:2]
+            frame_bgr[10:10+dh, frame_bgr.shape[1]-dw-10:frame_bgr.shape[1]-10] = resized
             # 终端输出小地图坐标
             if player_pos:
                 print(f"[小地图] 玩家位置: {player_pos}, 角度: {player_angle:.1f}°", end='\r')

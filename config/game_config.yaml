@@ -31,12 +31,12 @@ mouse:
 
 # 屏幕区域配置（用于截图优化，仅截取必要区域）
 screen_regions:
-  # 小地图区域（右上角）
-  minimap:
-    left: 1663
-    top: 40
-    right: 1890
-    bottom: 268
+  # 整张地图区域（按M键打开的大地图）
+  full_map:
+    left: 1060
+    top: 112
+    right: 1880
+    bottom: 933
   # 技能栏区域（屏幕中下部）
   skill_bar:
     left: 800

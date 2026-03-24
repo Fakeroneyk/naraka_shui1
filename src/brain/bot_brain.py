@@ -236,7 +236,7 @@ class NarakaBot:
             self._state.update_from_detection(detection)
 
         # 3. 小地图解析（裁取小地图区域）
-        minimap_frame = self._capture.grab_region("minimap", regions)
+        minimap_frame = self._capture.grab_region("full_map", regions)
         if minimap_frame is not None:
             pos = self._minimap.read_player_position(minimap_frame)
             angle = self._minimap.read_player_angle(minimap_frame)
